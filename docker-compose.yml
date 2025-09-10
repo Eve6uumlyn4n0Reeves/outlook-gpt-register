@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  outlook-email-client:
+    build: .
+    container_name: outlook-email-api
+    # 使用root用户运行容器，解决权限问题
+    user: root
+    ports:
+      - "8001:8000"
+    volumes:
+      # 数据持久化 - 保存用户账户信息
+      - ./data:/app/data
+      # 账户信息持久化
+      - ./accounts.json:/app/accounts.json
+      # 运行日志持久化
+      - ./run-logs:/app/run-logs
+
+    environment:
+      # 可以通过环境变量覆盖默认配置
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
+      # 安全配置（生产环境中请修改这些值）
+      - ADMIN_PASSWORD=admin123
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - outlook-network
+
+networks:
+  outlook-network:
+    driver: bridge
+
+volumes:
+  outlook-data:
+    driver: local

@@ -1,0 +1,7 @@
+preset: chatgpt_signup
+start_url: "https://chatgpt.com/"
+# 使用内置 chatgpt_signup 预设流程；如需自定义动作，可移除 preset 并改用 steps（仅支持 goto/click/type/wait_for）。
+#steps:
+#  - { name: goto, url: "https://chatgpt.com/" }
+#  - { name: click, selector: "button:has-text('Sign up')" }
+

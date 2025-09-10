@@ -1,0 +1,33 @@
+﻿# Python
+__pycache__/
+*.pyc
+
+# Logs and runs
+run-logs/
+logs/
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node/static build (if any)
+node_modules/
+dist/
+
+# Env
+.env
+.venv/
+venv/
+
+# Docker artifacts
+*.log
+
+
+# Secrets
+accounts.json
+docker.env
+
+# Databases
+*.sqlite

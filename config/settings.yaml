@@ -1,0 +1,81 @@
+﻿headless: false
+concurrency: 1
+max_retries: 3
+retry_backoff_sec: 2
+retry_backoff_cap_sec: 30
+navigation_timeout_ms: 90000
+action_delay_ms: 4000
+action_delay_jitter_ms: 1000
+# 保持自然环境：默认不强制覆盖 UA/语言/时区
+# 如需指定可解注以下示例，并确保与系统版本/地域一致
+# locale: "zh-CN"
+# timezone_id: "Asia/Shanghai"
+# user_agent: ""
+# accept_language: "zh-CN,zh;q=0.9,en;q=0.8"
+# 鐣欑┖浠ヤ娇鐢ㄧ郴缁?Chrome锛堟洿閫氱敤锛夛紝閬垮厤渚濊禆 playwright 瀹夎鐨勬祻瑙堝櫒
+browser_channel: ""
+
+safe_mode: true
+# 涓婚〉闃舵鏃堕棿棰勭畻锛堢锛夛細浠?chatgpt.com 鍒?auth.openai.com
+home_budget_sec: 6.0
+
+step_retry:
+  max_retries: 1
+  backoff_sec: 0.5
+  enter_email:
+    max_retries: 4
+    backoff_sec: 1.0
+
+logging:
+  net_debug: false
+  trace_on_failure: true
+  video_on_failure: true
+  videos_dir: "logs/videos"
+
+# 榛樿绔欑偣瀵嗙爜绛栫暐
+default_site_password: ""
+use_outlook_password_as_site_password: true
+
+otp:
+  subject_contains: "Verification code"
+  code_regex: "\\b(\\d{6})\\b"
+  poll_interval_sec: 3
+  poll_timeout_sec: 180
+  check_junk: true
+  from_contains: ""
+  junk_first: true
+  max_age_min: 15
+
+cloudflare:
+  enabled: true
+  max_wait_sec: 90
+  poll_interval_ms: 750
+  enable_captcha_click: true
+  retry_submit_after_clear: true
+  retry_reload_then_submit: true
+  log_preview_len: 200
+  headers_check: true
+
+proxy:
+  enabled: false
+  url: ""
+
+risk:
+  max_concurrency_per_ip: 1
+  stagger_start_sec: 0.8
+
+# 使用原生浏览器参数（不加任何指纹或注入）。
+# 设为 true 时，使用 Playwright 默认启动参数 + new_context。
+pure_native: true
+native_disable_automation_flag: true
+
+relax_fingerprints: false
+
+# 鏃犵棔琛屼负璁剧疆
+# 浣跨敤姣忚处鍙风嫭绔嬬殑鎸佷箙涓婁笅鏂?+ --incognito锛堢獥鍙ｆ樉绀烘棤鐥?UI锛?force_incognito_ui: true
+# 浣跨敤绯荤粺 Chrome + CDP 寮哄埗鏃犵棔锛堥粦鑹插附瀛?UI 鏇寸ǔ瀹氾級
+# 娉ㄦ剰锛氳嫢涓鸿处鍙疯缃簡浠ｇ悊锛堣姹傚唴 proxy 鎴?proxy_pool锛夛紝灏嗚嚜鍔ㄥ洖閫€鍒扳€滄寔涔呬笂涓嬫枃 + --incognito鈥濓紝浠ヤ究浠ｇ悊鎸夎处鍙风敓鏁堛€?force_cdp_incognito: false
+
+# 鍙€夛細鎸囧畾绯荤粺 Chrome 鍙墽琛屾枃浠惰矾寰勶紙Windows 鍙暀绌猴紝鑷姩鎺㈡祴锛?chrome_executable: ""
+
+# 璋冭瘯锛氬綋鍙戠敓閿欒鏃讹紝绐楀彛鍋滅暀绉掓暟锛?=涓嶄繚鐣欙級銆?debug_hold_on_error_sec: 10

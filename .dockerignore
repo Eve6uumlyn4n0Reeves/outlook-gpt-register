@@ -1,0 +1,68 @@
+# Git相关文件
+.git
+.gitignore
+
+# Python相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE相关
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统相关
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+
+# 测试和开发文件
+demo.py
+demo2.py
+emails/
+
+# Docker相关
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 文档和说明
+README.md
+Task*.md
+
+# 用户数据（将通过数据卷挂载）
+accounts.json
+
+# 其他不需要的文件夹
+4.30caprun-微软注册/ 

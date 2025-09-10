@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title></title>
+  <title>配置编辑器</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea { width: 48%; height: 400px; }
+    .row { display: flex; gap: 2%; }
+    button { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>配置在线编辑</h2>
+  <div class="row">
+    <div>
+      <h3>settings.yaml</h3>
+      <textarea id="settings"></textarea>
+      <div><button onclick="save('settings')"></button><button onclick="load()"></button></div>
+    </div>
+    <div>
+      <h3>flow.yaml</h3>
+      <textarea id="flow"></textarea>
+      <div><button onclick="save('flow')"></button><button onclick="load()"></button></div>
+    </div>
+  </div>
+
+  <script>
+    function authHeaders(){
+      const token = localStorage.getItem('adminPassword') || '';
+      return token ? { 'Authorization': 'Bearer ' + token } : {};
+    }
+    async function load(){
+      const headers = authHeaders();
+      const s = await fetch('/config/settings.yaml', { headers }).then(r=>{ if(!r.ok) throw new Error('加载 settings.yaml 失败: '+r.status); return r.text(); });
+      const f = await fetch('/config/flow.yaml', { headers }).then(r=>{ if(!r.ok) throw new Error('加载 flow.yaml 失败: '+r.status); return r.text(); });
+      document.getElementById('settings').value = s;
+      document.getElementById('flow').value = f;
+    }
+    async function save(which){
+      const body = document.getElementById(which).value;
+      const headers = { 'Content-Type':'text/plain;charset=utf-8', ...authHeaders() };
+      const res = await fetch(`/config/${which}.yaml`, { method:'PUT', headers, body });
+      if(!res.ok) throw new Error('保存失败: ' + res.status);
+      alert('已保存 ' + which);
+    }
+    // 修正标题和按钮文字（避免潜在编码异常字符）
+    document.title = '配置编辑器';
+    (function(){
+      const btns = document.querySelectorAll('button');
+      if (btns.length >= 4) {
+        btns[0].textContent = '保存';
+        btns[1].textContent = '加载';
+        btns[2].textContent = '保存';
+        btns[3].textContent = '加载';
+      }
+    })();
+    load();
+  </script>
+</body>
+</html>
+

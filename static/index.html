@@ -1,0 +1,2904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outlook邮件客户端</title>
+    <style>
+        /* 基础样式 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e7ff;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8fafc;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .email-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .toolbar-left h2 {
+            margin: 0 0 4px 0;
+            color: #1e293b;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .user-email {
+            font-size: 0.9rem;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dual-view-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            height: calc(100vh - 320px);
+            min-height: 500px;
+            max-height: 700px;
+        }
+
+        .email-column {
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            overflow: hidden;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+        }
+
+        .column-header h3 {
+            margin: 0;
+            color: #334155;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .email-count {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .email-list {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+            max-height: calc(100% - 60px);
+            min-height: 200px;
+        }
+
+        .email-list::-webkit-scrollbar {
+            width: 8px;
+            background: transparent;
+        }
+
+        .email-list::-webkit-scrollbar-track {
+            background: rgba(226, 232, 240, 0.2);
+            border-radius: 4px;
+            margin: 4px 0;
+        }
+
+        .email-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 30px;
+        }
+
+        .email-list::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a67d8, #6b46c1);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .email-list::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(135deg, #4c51bf, #553c9a);
+        }
+
+        /* Firefox滚动条样式 */
+        .email-list {
+            scrollbar-width: thin;
+            scrollbar-color: #667eea rgba(226, 232, 240, 0.2);
+        }
+
+        .email-item {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
+            margin-bottom: 8px;
+            padding: 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .email-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            opacity: 0;
+            transition: all 0.4s ease;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .email-item::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.03), transparent);
+            opacity: 0;
+            transition: all 0.6s ease;
+            transform: rotate(-45deg);
+        }
+
+        .email-item:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(248, 250, 252, 0.95));
+        }
+
+        .email-item:hover::before {
+            opacity: 1;
+            width: 6px;
+        }
+
+        .email-item:hover::after {
+            opacity: 1;
+            transform: rotate(-45deg) translate(50%, 50%);
+        }
+
+        .email-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .email-content-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .sender-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            position: relative;
+        }
+
+        .sender-avatar::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            padding: 2px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .email-item:hover .sender-avatar::after {
+            opacity: 0.6;
+        }
+
+        .email-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+            gap: 8px;
+        }
+
+        .email-subject {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+            line-height: 1.3;
+            margin: 0;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+
+        .email-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .email-date {
+            color: #667eea;
+            font-size: 11px;
+            font-weight: 500;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 3px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .email-status {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .status-indicator.unread {
+            background: #ef4444;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+        }
+
+        .attachment-icon {
+            font-size: 10px;
+            color: #8b5cf6;
+        }
+
+        .email-from {
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .email-preview {
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-style: italic;
+        }
+
+        .email-detail-header {
+            border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .email-meta-info p {
+            margin: 8px 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .email-meta-info strong {
+            color: #334155;
+            margin-right: 8px;
+        }
+
+        .email-content-header {
+            margin-bottom: 16px;
+        }
+
+        .content-type-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .content-tab {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .content-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .content-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+
+        .email-content-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .html-content iframe {
+            border: none;
+            background: white;
+        }
+
+        .plain-content,
+        .raw-content {
+            padding: 20px;
+        }
+
+        .plain-content pre {
+            margin: 0;
+            color: #374151;
+        }
+
+        .raw-content pre {
+            margin: 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            line-height: 1.4;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .email-list .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 150px;
+        }
+
+        .email-list .error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 150px;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px;
+            border: 1px solid #fecaca;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #fecaca;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #16a34a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #bbf7d0;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .hidden { display: none; }
+
+        .login-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #64748b;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab-content {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .email-item {
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        .email-item:nth-child(odd) {
+            animation-delay: 0.1s;
+        }
+
+        .email-item:nth-child(even) {
+            animation-delay: 0.2s;
+        }
+
+        @media (max-width: 1024px) {
+            .dual-view-container {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                height: auto;
+                min-height: 400px;
+                max-height: none;
+            }
+
+            .email-column {
+                max-height: 450px;
+            }
+
+            .email-list {
+                max-height: calc(100% - 80px);
+                min-height: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .header h1 { font-size: 2rem; }
+
+            .email-toolbar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .toolbar-right {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .account-select {
+                min-width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .toolbar-left h2 {
+                font-size: 1.2rem;
+            }
+
+            .dual-view-container {
+                gap: 12px;
+                min-height: 300px;
+                max-height: none;
+            }
+
+            .email-column {
+                padding: 16px;
+                max-height: 400px;
+            }
+
+            .email-list {
+                max-height: calc(100% - 70px);
+                min-height: 150px;
+            }
+
+            .column-header h3 {
+                font-size: 1rem;
+            }
+
+            .email-item {
+                padding: 12px;
+                margin-bottom: 6px;
+            }
+
+            .email-content-wrapper {
+                gap: 8px;
+            }
+
+            .sender-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+
+            .email-subject {
+                font-size: 13px;
+            }
+
+            .email-date {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+
+            .email-from {
+                font-size: 11px;
+            }
+
+            .email-preview {
+                font-size: 10px;
+            }
+
+            .pagination {
+                justify-content: center;
+                gap: 4px;
+            }
+
+            .pagination .btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+
+        .account-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .account-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #334155;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .account-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 8px;
+            margin-left: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .account-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: white;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-icon:hover {
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-icon svg {
+            transition: transform 0.3s ease;
+        }
+
+        .btn-icon:hover svg {
+            transform: scale(1.1);
+        }
+
+        .btn-danger {
+            color: #ef4444;
+            border-color: #fee2e2;
+        }
+
+        .btn-danger:hover {
+            background: #fee2e2;
+        }
+
+        .search-container {
+            position: relative;
+            width: 200px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .search-container input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            width: 240px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .account-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+
+        .account-selection {
+            display: flex;
+            align-items: center;
+        }
+
+        .select-all {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .account-list {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            background: white;
+        }
+
+        .account-list.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            color: #64748b;
+            font-style: italic;
+            background: #f8fafc;
+        }
+
+        .account-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            background: white;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .account-item:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .account-item:last-child {
+            border-bottom: none;
+        }
+
+        .account-item:hover {
+            background: #f1f5f9;
+        }
+
+        .account-item.filtered {
+            display: none;
+        }
+
+        .account-checkbox {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+            cursor: pointer;
+        }
+
+        .account-email {
+            flex: 1;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .account-email:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .account-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+            min-width: 60px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status-active::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #16a34a;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .status-inactive::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #dc2626;
+        }
+
+        .status-unknown {
+            background: #f3f4f6;
+            color: #64748b;
+            border: 1px solid #e5e7eb;
+        }
+
+        .status-unknown::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .status-checking {
+            background: #e0f2fe;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-checking::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #0284c7;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .account-info {
+            font-size: 13px;
+            color: #64748b;
+            font-style: italic;
+            text-align: center;
+            padding: 8px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .account-info p {
+            margin: 0;
+        }
+
+        /* 邮箱切换器样式 */
+        .account-switcher {
+            margin-right: 12px;
+        }
+
+        .account-select {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            color: #334155;
+            font-size: 13px;
+            min-width: 180px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .account-select:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .account-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* 验证结果样式 */
+        .verification-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .verification-empty svg {
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+
+        .verification-summary {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .verification-summary.has-success {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .verification-summary.all-failed {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        .summary-icon {
+            margin-right: 16px;
+        }
+
+        .has-success .summary-icon svg {
+            color: #16a34a;
+        }
+
+        .all-failed .summary-icon svg {
+            color: #dc2626;
+        }
+
+        .summary-text h4 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .summary-text p {
+            margin: 0;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .verification-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 180px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .verification-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 180px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            align-items: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .verification-item:last-child {
+            border-bottom: none;
+        }
+
+        .verification-item.success {
+            background-color: #f8fafc;
+        }
+
+        .verification-item.success:hover {
+            background-color: #f1f5f9;
+        }
+
+        .verification-item.failed {
+            background-color: #fef2f2;
+            opacity: 0.8;
+        }
+
+        .verification-checkbox-input {
+            width: 16px;
+            height: 16px;
+            accent-color: #667eea;
+        }
+
+        .verification-email {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .verification-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .verification-badge.success {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .verification-badge.error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .verification-error-message {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #dc2626;
+        }
+
+        .verification-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .verification-import-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 批量登录样式 */
+        .batch-header {
+            margin-bottom: 16px;
+        }
+
+        .batch-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #334155;
+            margin: 0 0 8px 0;
+        }
+
+        .batch-description {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .btn-with-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+        }
+
+        .verification-results {
+            margin-top: 24px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 验证加载样式 */
+        .verification-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 16px;
+        }
+
+        .spinner-sm {
+            width: 16px;
+            height: 16px;
+            border-width: 2px;
+            margin: 0;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 复制按钮样式 */
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .copy-button:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .copy-button.copied {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .copy-button-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .email-content {
+            position: relative;
+        }
+    </style>
+    <script src="/static/js/common.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Outlook邮件客户端</h1>
+        </div>
+
+        <div id="adminLoginCard" class="card">
+            <h2>🔐 管理员登录</h2>
+            <p style="color: #64748b; margin-bottom: 20px;">请输入管理密码以访问邮件系统</p>
+
+            <div class="input-group">
+                <label>管理密码</label>
+                <input type="password" id="adminPassword" placeholder="请输入管理密码" onkeypress="handleAdminPasswordKeyPress(event)">
+            </div>
+            <button class="btn btn-primary" onclick="adminLogin()">🔑 验证登录</button>
+        </div>
+
+        <div id="loginCard" class="card hidden">
+            <h2>账户配置</h2>
+
+            <div class="login-tabs">
+                <button class="tab-btn active" onclick="switchTab('single')">单账户登录</button>
+                <button class="tab-btn" onclick="switchTab('batch')">批量登录</button>
+                <button class="tab-btn" onclick="switchTab('manage')">账户管理</button>
+                <button class="tab-btn" onclick="switchTab('gpt')">批量注册</button>
+
+            </div>
+
+            <div id="singleLogin" class="tab-content">
+                <div class="input-group">
+                    <label>邮箱地址</label>
+                    <input type="email" id="email" placeholder="example@outlook.com">
+                </div>
+                <div class="input-group">
+                    <label>刷新令牌</label>
+                    <textarea id="refreshToken" rows="3" placeholder="从Azure应用获取的refresh_token"></textarea>
+                </div>
+                <div class="input-group">
+                    <label>客户端ID</label>
+                    <input type="text" id="clientId" placeholder="Azure应用的client_id">
+                </div>
+                <button class="btn btn-primary" onclick="login()">验证并登录</button>
+            </div>
+
+            <div id="batchLogin" class="tab-content hidden">
+                <div class="batch-header">
+                    <h3>批量验证账户</h3>
+                    <p class="batch-description">每行一个账户，支持两种顺序：邮箱----密码----refresh_token----client_id 或 邮箱----密码----client_id----refresh_token</p>
+                </div>
+                <div class="input-group">
+                    <textarea id="batchAccounts" rows="8" placeholder="example@outlook.com----password----client_id----refresh_token"></textarea>
+                </div>
+                <button class="btn btn-primary btn-with-icon" onclick="verifyBatchAccounts()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    验证账户
+                </button>
+                <div id="verificationResultList" class="verification-results"></div>
+                </div>
+
+            <div id="gptRegister" class="tab-content hidden">
+                <div class="batch-header">
+                    <h3>GPT 批量注册</h3>
+                    <p class="batch-description">与“单账户登录 / 批量登录 / 账户管理”并列的第四栏。支持 JSON 数组或逐行 JSON，每个对象可携带 proxy、user_agent。</p>
+                </div>
+                <div class="input-group">
+                    <label>Run ID</label>
+                    <input id="gptRunId" placeholder="创建后自动填充" readonly>
+                </div>
+                <div class="input-group">
+                    <label>并发 <span style="color:#64748b;font-size:12px;">默认1（串行模式，暂不可改）</span></label>
+                    <input id="gptConcurrency" value="1" disabled title="当前版本强制串行，暂不支持调整并发">
+                </div>
+
+                <div class="input-group">
+                    <label>从账户管理选择账户</label>
+                    <div class="button-row">
+                        <button class="btn" onclick="gptSelectAll(true)">全选</button>
+                        <button class="btn" onclick="gptSelectAll(false)">取消全选</button>
+                    </div>
+                    <div id="gptAccountList" class="account-list" data-loaded="false">
+                        <p>加载中...</p>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>账户列表</label>
+                    <textarea id="gptAccounts" rows="8" placeholder='[{"email":"a@example.com","password":"...","proxy":"http://user:pass@ip:port","user_agent":"Mozilla/5.0 ..."}]'></textarea>
+                </div>
+                <div class="button-row">
+                    <button class="btn btn-primary" onclick="startGptRun()">创建任务</button>
+                    <button class="btn" onclick="pauseGptRun()">暂停</button>
+                    <button class="btn" onclick="resumeGptRun()">继续</button>
+                    <button class="btn btn-danger" onclick="cancelGptRun()">取消</button>
+                    <button class="btn" onclick="exportGptSuccess()">导出成功账号</button>
+                    <button class="btn btn-secondary" onclick="clearGptLog()">清空日志</button>
+
+                </div>
+                <div class="input-group">
+                    <label>任务状态</label>
+                    <div id="gptStatus" style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; background:#0b1020; color:#bde0fe; padding:8px 10px; border-radius:6px; border:1px solid #2a3350;">
+                        待创建
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>日志</label>
+                    <pre id="gptLog" style="height:220px; overflow:auto; background:#0b1020; color:#d7e6ff; padding:10px; border-radius:6px; border:1px solid #2a3350;"></pre>
+                </div>
+            </div>
+
+            </div>
+
+            <div id="accountManage" class="tab-content hidden">
+                <div class="account-header">
+                    <h3 class="account-title">账户管理 <span class="account-count" id="accountCount">0</span></h3>
+                    <div class="account-actions">
+                        <button class="btn btn-icon" onclick="loadAccountList(true)" title="刷新状态">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                        </button>
+                        <button class="btn btn-icon btn-danger" onclick="deleteSelectedAccounts()" title="删除选中">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                        <div class="search-container">
+                            <input type="text" id="accountSearch" placeholder="搜索账户..." onkeyup="filterAccounts()">
+                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="account-toolbar">
+                    <div class="account-filter">
+                        <span class="filter-label">筛选:</span>
+                        <button class="filter-btn active" data-filter="all" onclick="filterByStatus('all')">全部</button>
+                        <button class="filter-btn" data-filter="active" onclick="filterByStatus('active')">有效</button>
+                        <button class="filter-btn" data-filter="inactive" onclick="filterByStatus('inactive')">无效</button>
+                    </div>
+                    <div class="account-selection">
+                        <label class="select-all">
+                            <input type="checkbox" id="selectAllAccounts" onchange="toggleSelectAll()">
+                            <span>全选</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="accountList" class="account-list loading">
+                    <p>加载中...</p>
+                </div>
+                <div class="account-info">
+                    <p>提示: 点击账户邮箱可直接登录该账户</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="emailCard" class="card hidden">
+            <div class="email-toolbar">
+                <div class="toolbar-left">
+                    <h2>📧 邮件管理</h2>
+                    <span id="userEmail" class="user-email"></span>
+                </div>
+                <div class="toolbar-right">
+                    <div class="account-switcher">
+                        <select id="accountSwitcher" class="account-select" onchange="switchAccount()">
+                            <option value="">选择邮箱...</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadDualEmails(true)">🔄 刷新</button>
+                    <button class="btn btn-secondary" onclick="backToAccountManage()">📋 账户管理</button>
+                    <button class="btn btn-secondary" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+
+            <div class="dual-view-container">
+                <div class="email-column">
+                    <div class="column-header">
+                        <h3>📥 收件箱</h3>
+                        <span id="inboxCount" class="email-count">0</span>
+                    </div>
+                    <div id="inboxList" class="email-list loading">
+                        <p>加载中...</p>
+                    </div>
+                    <div id="inboxPagination" class="pagination hidden"></div>
+                </div>
+
+                <div class="email-column">
+                    <div class="column-header">
+                        <h3>🗑️ 垃圾邮件</h3>
+                        <span id="junkCount" class="email-count">0</span>
+                    </div>
+                    <div id="junkList" class="email-list loading">
+                        <p>加载中...</p>
+                    </div>
+                    <div id="junkPagination" class="pagination hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="detailCard" class="card hidden">
+            <button class="btn btn-secondary" onclick="backToList()">← 返回列表</button>
+            <div id="emailDetail" class="email-detail"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let currentUser = null;
+        let currentPage = 1;
+        let totalEmails = 0;
+        let savedAccounts = JSON.parse(localStorage.getItem('savedAccounts') || '{}');
+        let adminPassword = localStorage.getItem('adminPassword');
+
+        function formatEmailDate(dateString) {
+            try {
+                if (!dateString) return '未知时间';
+
+                // 处理各种可能的日期格式
+                let date = new Date(dateString);
+
+                // 验证日期是否有效
+                if (isNaN(date.getTime())) {
+                    // 尝试解析ISO格式但没有时区信息的情况
+                    if (dateString.includes('T') && !dateString.includes('Z') && !dateString.includes('+')) {
+                        date = new Date(dateString + 'Z');
+                    }
+
+                    if (isNaN(date.getTime())) {
+                        return '日期格式错误';
+                    }
+                }
+
+                const now = new Date();
+                const diffMs = now - date;
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                // 根据时间差显示不同格式
+                if (diffDays === 0) {
+                    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                } else if (diffDays === 1) {
+                    return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                } else if (diffDays < 7) {
+                    return `${diffDays}天前`;
+                } else if (diffDays < 365) {
+                    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+                } else {
+                    return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
+                }
+            } catch (error) {
+                console.error('Date formatting error:', error, 'Original date:', dateString);
+                return '时间解析失败';
+            }
+        }
+
+        function showError(msg) {
+            const existing = document.querySelector('.error');
+            if (existing) existing.remove();
+
+            const error = document.createElement('div');
+            error.className = 'error';
+            error.textContent = msg;
+            document.querySelector('.container').insertBefore(error, document.querySelector('.card'));
+            setTimeout(() => error.remove(), 5000);
+        }
+
+        function showSuccess(msg) {
+            const existing = document.querySelector('.success');
+            if (existing) existing.remove();
+
+            const success = document.createElement('div');
+            success.className = 'success';
+            success.textContent = msg;
+            document.querySelector('.container').insertBefore(success, document.querySelector('.card'));
+            setTimeout(() => success.remove(), 3000);
+        }
+
+        // ============================================================================
+        // 极简认证管理函数
+        // ============================================================================
+
+        function setAdminPassword(password) {
+            adminPassword = password;
+            localStorage.setItem('adminPassword', password);
+        }
+
+        function clearAdminPassword() {
+            adminPassword = null;
+            localStorage.removeItem('adminPassword');
+        }
+
+        function isPasswordSet() {
+            return adminPassword && adminPassword.length > 0;
+        }
+
+        async function adminLogin() {
+            const password = document.getElementById('adminPassword').value;
+            if (!password) {
+                showError('请输入管理密码');
+                return;
+            }
+
+            try {
+                // 通过尝试调用API来验证密码
+                const response = await fetch(`${API_BASE}/auth/config`, {
+                    headers: {
+                        'Authorization': `Bearer ${password}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('管理密码错误');
+                }
+
+                setAdminPassword(password);
+                showEmailManagement();
+                showSuccess('管理员登录成功');
+
+            } catch (error) {
+                showError('管理员登录失败: ' + error.message);
+            }
+        }
+
+        function handleAdminPasswordKeyPress(event) {
+            if (event.key === 'Enter') {
+                adminLogin();
+            }
+        }
+
+        function showAdminLogin() {
+            document.getElementById('adminLoginCard').classList.remove('hidden');
+            document.getElementById('loginCard').classList.add('hidden');
+            document.getElementById('emailCard').classList.add('hidden');
+            document.getElementById('detailCard').classList.add('hidden');
+            document.getElementById('adminPassword').focus();
+        }
+
+        function showEmailManagement() {
+            document.getElementById('adminLoginCard').classList.add('hidden');
+            document.getElementById('loginCard').classList.remove('hidden');
+
+            // 切换到账户管理标签页并加载账户列表
+            switchTab('manage');
+            loadAccountList();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            // 找到对应的按钮并激活
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                const map = { single: '单账户登录', batch: '批量登录', manage: '账户管理', gpt: '批量注册' };
+                if (btn.textContent === map[tab]) btn.classList.add('active');
+            });
+
+            // 显示对应的内容区域
+            const mapId = { single: 'singleLogin', batch: 'batchLogin', manage: 'accountManage', gpt: 'gptRegister' };
+            document.getElementById(mapId[tab]).classList.remove('hidden');
+
+            if (tab === 'manage' && document.getElementById('accountList').children.length <= 1) {
+                loadAccountList();
+            } else if (tab === 'gpt') {
+                try { loadGptAccountList(); } catch {}
+            }
+        }
+
+        // 简单的请求去重与频率限制（防抖/限流）
+        const __inFlight = new Map(); // key -> Promise<Response>
+        const __lastCallAt = new Map(); // key -> ts
+
+        async function makeRequest(url, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                // CORS 相关请求头无需由客户端设置，这里保留向后兼容
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            };
+
+            // 添加认证头（直接使用管理密码作为Bearer令牌）
+            if (adminPassword && !url.includes('/auth/config')) {
+                headers['Authorization'] = `Bearer ${adminPassword}`;
+            }
+
+            const defaultOptions = {
+                method: (options.method || 'GET').toUpperCase(),
+                headers: {
+                    ...headers,
+                    ...(options.headers || {})
+                },
+                ...options
+            };
+
+            // 生成去重 key（同 method+url+body 认为是同一请求）
+            const bodyPart = typeof defaultOptions.body === 'string' ? defaultOptions.body : (defaultOptions.body ? JSON.stringify(defaultOptions.body) : '');
+            const key = `${defaultOptions.method} ${url} ${bodyPart}`;
+
+            // 速率限制：对 GET 默认最小间隔 600ms，避免页面频繁触发造成抖动
+            const now = Date.now();
+            const last = __lastCallAt.get(key) || 0;
+            const minInterval = defaultOptions.method === 'GET' ? 600 : 0;
+            if (__inFlight.has(key)) {
+                return __inFlight.get(key);
+            }
+            if (minInterval && (now - last) < minInterval) {
+                // 若过快重复触发且无在途请求，延时后复用同一次请求
+                await new Promise(r => setTimeout(r, minInterval - (now - last)));
+                if (__inFlight.has(key)) return __inFlight.get(key);
+            }
+            __lastCallAt.set(key, Date.now());
+
+            const p = (async () => {
+                try {
+                    const response = await fetch(url, defaultOptions);
+                    if (response.status === 401) {
+                        clearAdminPassword();
+                        showAdminLogin();
+                        throw new Error('管理密码错误，请重新登录');
+                    }
+                    return response;
+                } finally {
+                    __inFlight.delete(key);
+                }
+            })();
+
+            __inFlight.set(key, p);
+            return p;
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const refreshToken = document.getElementById('refreshToken').value;
+            const clientId = document.getElementById('clientId').value;
+
+            if (!email || !refreshToken || !clientId) {
+                showError('请填写所有必需字段');
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`${API_BASE}/accounts`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email,
+                        refresh_token: refreshToken,
+                        client_id: clientId
+                    })
+                });
+
+                if (!response.ok) throw new Error('验证失败');
+
+                savedAccounts[email] = { refresh_token: refreshToken, client_id: clientId };
+                localStorage.setItem('savedAccounts', JSON.stringify(savedAccounts));
+
+                currentUser = email;
+                showLoginSuccess();
+
+            } catch (error) {
+                showError('登录失败: ' + error.message);
+            }
+        }
+
+        async function verifyBatchAccounts() {
+            const batchText = document.getElementById('batchAccounts').value.trim();
+            if (!batchText) {
+                showError('请输入账户信息');
+                return;
+            }
+
+            const lines = batchText.split('\n').filter(line => line.trim());
+            const resultList = document.getElementById('verificationResultList');
+            resultList.innerHTML = '<div class="verification-loading"><div class="spinner"></div><p>正在验证账户，请稍候...</p></div>';
+
+            // 准备批量验证的账户列表（兼容两种字段顺序）
+            const accounts = [];
+            const pwdMap = {}; // 记录每个邮箱对应的密码，供后续导入持久化
+            const isUUID = (s) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test((s || ''));
+            for (const line of lines) {
+                const parts = line.split('----').map(p => p.trim());
+                if (parts.length !== 4) continue;
+
+                const [email, password, third, fourth] = parts;
+                let clientId, refreshToken;
+
+                if (isUUID(third) && !isUUID(fourth)) {
+                    clientId = third;
+                    refreshToken = fourth;
+                } else if (!isUUID(third) && isUUID(fourth)) {
+                    refreshToken = third;
+                    clientId = fourth;
+                } else {
+                    // 回退：长度更长的通常是 refresh_token
+                    if ((third || '').length >= (fourth || '').length) {
+                        refreshToken = third;
+                        clientId = fourth;
+                    } else {
+                        clientId = third;
+                        refreshToken = fourth;
+                    }
+                }
+
+                // 保存密码映射（仅在导入到后端时使用）
+                if (email && password) pwdMap[email] = password;
+
+                accounts.push({
+                    email,
+                    refresh_token: refreshToken,
+                    client_id: clientId
+                });
+            }
+            // 暴露到全局以便导入时取用
+            window.batchPwdMap = pwdMap;
+
+            if (accounts.length === 0) {
+                resultList.innerHTML = '<div class="verification-empty"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p>无法解析账户信息，请检查格式</p></div>';
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`${API_BASE}/accounts/verify`, {
+                    method: 'POST',
+                    body: JSON.stringify({ accounts })
+                });
+
+                if (!response.ok) throw new Error('验证请求失败');
+
+                const results = await response.json();
+                renderVerificationResult(results);
+
+            } catch (error) {
+                resultList.innerHTML = `<div class="verification-empty"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg><p>验证失败: ${error.message}</p></div>`;
+            }
+        }
+
+        async function importSelectedAccounts() {
+            const checkboxes = document.querySelectorAll('.verification-checkbox-input:checked');
+            if (checkboxes.length === 0) {
+                showError('请至少选择一个要导入的账户');
+                return;
+            }
+
+            const accounts = Array.from(checkboxes).map(cb => ({
+                email: cb.dataset.email,
+                refresh_token: cb.dataset.refreshToken,
+                client_id: cb.dataset.clientId,
+                //   8   f   f
+                password: (window.batchPwdMap && window.batchPwdMap[cb.dataset.email]) || undefined
+            }));
+
+            try {
+                // 添加导入中的视觉反馈
+                const importBtn = document.querySelector('.verification-import-btn');
+                const originalText = importBtn.innerHTML;
+                importBtn.innerHTML = '<div class="spinner spinner-sm"></div>导入中...';
+                importBtn.disabled = true;
+
+                const response = await makeRequest(`${API_BASE}/accounts/import`, {
+                    method: 'POST',
+                    body: JSON.stringify(accounts)
+                });
+
+                if (!response.ok) throw new Error('导入账户失败');
+
+                const results = await response.json();
+                const successCount = Array.isArray(results) ?
+                    results.filter(r => !r.message.startsWith('Error')).length :
+                    (results.message.includes('success') ? 1 : 0);
+
+                // 更新本地存储
+                for (const account of accounts) {
+                    savedAccounts[account.email] = {
+                        refresh_token: account.refresh_token,
+                        client_id: account.client_id
+                    };
+                }
+                localStorage.setItem('savedAccounts', JSON.stringify(savedAccounts));
+
+                showSuccess(`成功导入 ${successCount} 个账户`);
+
+                // 切换到账户管理标签页并刷新列表
+                setTimeout(() => {
+                    switchTab('manage');
+                    loadAccountList();
+                }, 1000);
+
+            } catch (error) {
+                showError('导入账户失败: ' + error.message);
+                // 恢复按钮状态
+                document.querySelector('.verification-import-btn').innerHTML = originalText;
+                document.querySelector('.verification-import-btn').disabled = false;
+            }
+        }
+
+        function renderVerificationResult(results) {
+            const container = document.getElementById('verificationResultList');
+
+            if (results.length === 0) {
+                container.innerHTML = '<div class="verification-empty"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p>未找到账户</p></div>';
+                return;
+            }
+
+            const successCount = results.filter(r => r.status === 'success').length;
+            const failCount = results.length - successCount;
+
+            let html = `<div class="verification-summary ${successCount > 0 ? 'has-success' : 'all-failed'}">
+                <div class="summary-icon">
+                    ${successCount > 0 ?
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' :
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'}
+                </div>
+                <div class="summary-text">
+                    <h4>验证结果</h4>
+                    <p>${successCount} 个成功, ${failCount} 个失败</p>
+                </div>
+            </div>`;
+
+            // 添加表头
+            html += `<div class="verification-header">
+                <div class="verification-checkbox-header">
+                    <input type="checkbox" id="selectAllVerified" onchange="toggleSelectAllVerified()" ${successCount > 0 ? '' : 'disabled'}>
+                </div>
+                <div class="verification-email-header">邮箱地址</div>
+                <div class="verification-status-header">状态</div>
+            </div>`;
+
+            // 添加验证结果项
+            results.forEach((result, index) => {
+                const isSuccess = result.status === 'success';
+                const delay = index * 50; // 添加延迟动画
+
+                html += `
+                <div class="verification-item ${isSuccess ? 'success' : 'failed'}" style="animation-delay: ${delay}ms;">
+                    <div class="verification-checkbox">
+                        <input type="checkbox" class="verification-checkbox-input" ${isSuccess ? 'checked' : 'disabled'}
+                            data-email="${result.email}"
+                            ${isSuccess ? `data-refresh-token="${result.credentials.refresh_token}" data-client-id="${result.credentials.client_id}"` : ''}>
+                    </div>
+                    <div class="verification-email">${result.email}</div>
+                    <div class="verification-status">
+                        <span class="verification-badge ${isSuccess ? 'success' : 'error'}">
+                            ${isSuccess ?
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' :
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'}
+                            ${isSuccess ? '验证成功' : '验证失败'}
+                        </span>
+                        ${!isSuccess ? `<div class="verification-error-message">${result.message}</div>` : ''}
+                    </div>
+                </div>
+                `;
+            });
+
+            // 添加导入按钮
+            if (successCount > 0) {
+                html += `
+                <div class="verification-actions">
+                    <button class="btn btn-primary verification-import-btn" onclick="importSelectedAccounts()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        导入选中账户
+                    </button>
+                </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function toggleSelectAllVerified() {
+            const isChecked = document.getElementById('selectAllVerified').checked;
+            const checkboxes = document.querySelectorAll('.verification-checkbox-input:not([disabled])');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        }
+
+        async function loadAccountList(forceCheck = false) {
+            const accountList = document.getElementById('accountList');
+            accountList.className = 'account-list loading';
+            accountList.innerHTML = '<p>加载中...</p>';
+
+            try {
+                // 调用后端API获取账户列表及其状态
+                const response = await makeRequest(`${API_BASE}/accounts?check_status=${forceCheck}`);
+
+                if (!response.ok) throw new Error('获取账户列表失败');
+
+                const accounts = await response.json();
+                renderAccountList(accounts);
+
+                // 更新账户数量显示
+                document.getElementById('accountCount').textContent = accounts.length;
+
+            } catch (error) {
+                accountList.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        function renderAccountList(accounts) {
+            const container = document.getElementById('accountList');
+
+            if (accounts.length === 0) {
+                container.className = 'account-list';
+                container.innerHTML = '<div class="error">暂无账户，请先添加账户</div>';
+                return;
+            }
+
+            let html = '';
+
+            accounts.forEach((account, index) => {
+                const statusClass = account.status === 'active' ? 'status-active' :
+                                   account.status === 'inactive' ? 'status-inactive' : 'status-unknown';
+                const statusText = account.status === 'active' ? '有效' :
+                                  account.status === 'inactive' ? '无效' : '未知';
+
+                // 添加延迟动画
+                const delay = index * 50;
+
+                html += `
+                <div class="account-item" data-email="${account.email}" data-status="${account.status}" style="animation-delay: ${delay}ms;">
+                    <input type="checkbox" class="account-checkbox" data-email="${account.email}">
+                    <span class="account-email" onclick="loginWithAccount('${account.email}')">${account.email}</span>
+                    <span class="account-status ${statusClass}">${statusText}</span>
+                </div>
+                `;
+            });
+
+            container.className = 'account-list';
+            container.innerHTML = html;
+
+            // 重置全选框
+            document.getElementById('selectAllAccounts').checked = false;
+        }
+
+        function filterAccounts() {
+            const searchTerm = document.getElementById('accountSearch').value.toLowerCase();
+            const accountItems = document.querySelectorAll('#accountList .account-item');
+
+            accountItems.forEach(item => {
+                const email = item.getAttribute('data-email').toLowerCase();
+                if (email.includes(searchTerm)) {
+                    item.classList.remove('filtered');
+                } else {
+                    item.classList.add('filtered');
+                }
+            });
+        }
+
+        function filterByStatus(status) {
+            // 更新按钮状态
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.filter-btn[data-filter="${status}"]`).classList.add('active');
+
+            // 筛选账户列表
+            const accountItems = document.querySelectorAll('#accountList .account-item');
+
+            accountItems.forEach(item => {
+                const itemStatus = item.getAttribute('data-status');
+
+                if (status === 'all' || itemStatus === status) {
+                    item.classList.remove('filtered');
+                } else {
+                    item.classList.add('filtered');
+                }
+            });
+        }
+
+        function toggleSelectAll() {
+            const isChecked = document.getElementById('selectAllAccounts').checked;
+            const visibleCheckboxes = document.querySelectorAll('#accountList .account-item:not(.filtered) .account-checkbox');
+
+            visibleCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        }
+
+        function loginWithAccount(email) {
+            if (!savedAccounts[email]) {
+                showError('账户信息不存在');
+                return;
+            }
+
+            // 添加加载动画
+            const accountItems = document.querySelectorAll('#accountList .account-item');
+            accountItems.forEach(item => {
+                if (item.getAttribute('data-email') === email) {
+                    item.style.background = 'rgba(102, 126, 234, 0.1)';
+                    item.style.transition = 'all 0.3s ease';
+                }
+            });
+
+            currentUser = email;
+            setTimeout(() => showLoginSuccess(), 300); // 添加短暂延迟以显示选中效果
+        }
+
+        async function deleteSelectedAccounts() {
+            const checkboxes = document.querySelectorAll('#accountList .account-item:not(.filtered) .account-checkbox:checked');
+            if (checkboxes.length === 0) {
+                showError('请至少选择一个要删除的账户');
+                return;
+            }
+
+            if (!confirm(`确定要删除选中的 ${checkboxes.length} 个账户吗？此操作不可撤销。`)) {
+                return;
+            }
+
+            const emails = Array.from(checkboxes).map(cb => cb.dataset.email);
+
+            // 先添加视觉反馈
+            emails.forEach(email => {
+                const item = document.querySelector(`.account-item[data-email="${email}"]`);
+                if (item) {
+                    item.style.opacity = '0.5';
+                    item.style.background = '#fee2e2';
+                }
+            });
+
+            try {
+                const response = await makeRequest(`${API_BASE}/accounts`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ emails })
+                });
+
+                if (!response.ok) throw new Error('删除账户失败');
+
+                const result = await response.json();
+
+                // 更新本地存储
+                emails.forEach(email => {
+                    delete savedAccounts[email];
+                });
+                localStorage.setItem('savedAccounts', JSON.stringify(savedAccounts));
+
+                showSuccess(result.message || `成功删除 ${result.deleted} 个账户`);
+
+                // 淡出动画后重新加载账户列表
+                setTimeout(() => loadAccountList(), 300);
+
+            } catch (error) {
+                showError('删除账户失败: ' + error.message);
+                // 恢复视觉状态
+                emails.forEach(email => {
+                    const item = document.querySelector(`.account-item[data-email="${email}"]`);
+                    if (item) {
+                        item.style.opacity = '1';
+                        item.style.background = '';
+                    }
+                });
+            }
+        }
+
+        function showLoginSuccess() {
+            // 这个函数现在处理邮箱账户登录成功后的逻辑
+            if (!isPasswordSet()) {
+                showAdminLogin();
+                return;
+            }
+
+            document.getElementById('loginCard').classList.add('hidden');
+            document.getElementById('emailCard').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser;
+
+            // 加载账户选择器
+            loadAccountSwitcher();
+
+            showSuccess(`已登录: ${currentUser}`);
+            loadDualEmails(false);
+        }
+
+        function logout() {
+            currentUser = null;
+            clearAdminPassword();
+
+            // 重定向到管理员登录页面
+            showAdminLogin();
+
+            // 清空表单
+            document.getElementById('email').value = '';
+            document.getElementById('refreshToken').value = '';
+            document.getElementById('clientId').value = '';
+            document.getElementById('adminPassword').value = '';
+        }
+
+        let currentInboxPage = 1;
+        let currentJunkPage = 1;
+
+        async function loadDualEmails(forceRefresh = false) {
+            const inboxList = document.getElementById('inboxList');
+            const junkList = document.getElementById('junkList');
+
+            // 添加加载动画
+            const loadingHTML = '<div class="loading"><div class="spinner"></div><p>加载中...</p></div>';
+            inboxList.innerHTML = loadingHTML;
+            junkList.innerHTML = loadingHTML;
+
+            try {
+                const response = await makeRequest(`${API_BASE}/emails/${currentUser}/dual-view?inbox_page=${currentInboxPage}&junk_page=${currentJunkPage}&page_size=20&force_refresh=${forceRefresh}`);
+                if (!response.ok) throw new Error('获取邮件失败');
+
+                const data = await response.json();
+
+                // 更新邮件计数
+                document.getElementById('inboxCount').textContent = data.inbox_total;
+                document.getElementById('junkCount').textContent = data.junk_total;
+
+                // 渲染收件箱邮件
+                if (data.inbox_emails.length === 0) {
+                    inboxList.innerHTML = '<div class="loading"><p>暂无邮件</p></div>';
+                } else {
+                    inboxList.innerHTML = data.inbox_emails.map(email => createEmailItem(email)).join('');
+                }
+
+                // 渲染垃圾邮件
+                if (data.junk_emails.length === 0) {
+                    junkList.innerHTML = '<div class="loading"><p>暂无邮件</p></div>';
+                } else {
+                    junkList.innerHTML = data.junk_emails.map(email => createEmailItem(email)).join('');
+                }
+
+                updateDualPagination(data.inbox_total, data.junk_total);
+
+            } catch (error) {
+                inboxList.innerHTML = '<div class="error">加载失败: ' + error.message + '</div>';
+                junkList.innerHTML = '<div class="error">加载失败: ' + error.message + '</div>';
+            }
+        }
+
+        function createEmailItem(email) {
+            const readStatus = email.is_read ? 'read' : 'unread';
+            const attachmentIcon = email.has_attachments ? '<span class="attachment-icon">📎</span>' : '';
+
+            return `
+                <div class="email-item" onclick="showEmailDetail('${email.message_id}')">
+                    <div class="email-content-wrapper">
+                        <div class="sender-avatar">
+                            ${email.sender_initial}
+                        </div>
+                        <div class="email-info">
+                            <div class="email-header">
+                                <h3 class="email-subject">${email.subject || '(无主题)'}</h3>
+                                <div class="email-meta">
+                                    <span class="email-date">${formatEmailDate(email.date)}</span>
+                                    <div class="email-status">
+                                        <div class="status-indicator ${readStatus}"></div>
+                                        ${attachmentIcon}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="email-from">📧 ${email.from_email}</div>
+                            <div class="email-preview">点击查看邮件详情...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadInboxPage(page) {
+            currentInboxPage = page;
+            await loadDualEmails(false);
+        }
+
+        async function loadJunkPage(page) {
+            currentJunkPage = page;
+            await loadDualEmails(false);
+        }
+
+        function sanitizeHTML(html) {
+            // 创建一个临时div来解析HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            // 移除所有script标签
+            const scripts = tempDiv.querySelectorAll('script');
+            scripts.forEach(script => script.remove());
+
+            // 移除可能的危险属性
+            const allElements = tempDiv.querySelectorAll('*');
+            allElements.forEach(element => {
+                // 移除事件处理属性
+                const attrs = [...element.attributes];
+                attrs.forEach(attr => {
+                    if (attr.name.startsWith('on') || attr.name === 'javascript:') {
+                        element.removeAttribute(attr.name);
+                    }
+                });
+            });
+
+            return tempDiv.innerHTML;
+        }
+
+        function renderEmailContent(email) {
+            const hasHtml = email.body_html && email.body_html.trim();
+            const hasPlain = email.body_plain && email.body_plain.trim();
+
+            if (!hasHtml && !hasPlain) {
+                return '<p style="color: #94a3b8; font-style: italic;">此邮件无内容</p>';
+            }
+
+            // 如果有HTML内容，提供切换选项
+            if (hasHtml) {
+                const sanitizedHtml = sanitizeHTML(email.body_html);
+
+                return `
+                    <div class="email-content-header">
+                        <div class="content-type-tabs">
+                            <button class="content-tab active" onclick="showHtmlContent()" id="htmlTab">
+                                🎨 HTML视图
+                            </button>
+                            ${hasPlain ? '<button class="content-tab" onclick="showPlainContent()" id="plainTab">📝 纯文本</button>' : ''}
+                            <button class="content-tab" onclick="showRawContent()" id="rawTab">
+                                🔍 源码
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="htmlContent" class="email-content html-content">
+                        <iframe srcdoc="${sanitizedHtml.replace(/"/g, '&quot;')}"
+                                style="width: 100%; min-height: 400px; border: 1px solid #e2e8f0; border-radius: 8px;"
+                                sandbox="allow-same-origin">
+                        </iframe>
+                    </div>
+
+                    ${hasPlain ? `
+                    <div id="plainContent" class="email-content plain-content hidden">
+                        <button class="copy-button" onclick="copyToClipboard('plainContent')">
+                            <svg class="copy-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            复制内容
+                        </button>
+                        <pre style="white-space: pre-wrap; font-family: inherit;">${email.body_plain}</pre>
+                    </div>
+                    ` : ''}
+
+                    <div id="rawContent" class="email-content raw-content hidden">
+                        <button class="copy-button" onclick="copyToClipboard('rawContent')">
+                            <svg class="copy-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            复制源码
+                        </button>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 12px;">${email.body_html.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                    </div>
+                `;
+            } else {
+                // 只有纯文本
+                return `
+                    <div class="email-content plain-content">
+                        <button class="copy-button" onclick="copyToClipboard('plainContent')">
+                            <svg class="copy-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            复制内容
+                        </button>
+                        <pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.6;">${email.body_plain}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        function showHtmlContent() {
+            document.querySelectorAll('.content-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.email-content').forEach(content => content.classList.add('hidden'));
+
+            document.getElementById('htmlTab').classList.add('active');
+            document.getElementById('htmlContent').classList.remove('hidden');
+        }
+
+        function showPlainContent() {
+            document.querySelectorAll('.content-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.email-content').forEach(content => content.classList.add('hidden'));
+
+            document.getElementById('plainTab').classList.add('active');
+            document.getElementById('plainContent').classList.remove('hidden');
+        }
+
+        function showRawContent() {
+            document.querySelectorAll('.content-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.email-content').forEach(content => content.classList.add('hidden'));
+
+            document.getElementById('rawTab').classList.add('active');
+            document.getElementById('rawContent').classList.remove('hidden');
+        }
+
+        function copyToClipboard(contentId) {
+            // 获取要复制的内容
+            const contentElement = document.getElementById(contentId);
+            const textToCopy = contentElement.querySelector('pre').innerText;
+
+            // 使用 Clipboard API 复制文本
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    // 复制成功，更新按钮状态
+                    const copyButton = contentElement.querySelector('.copy-button');
+                    const originalText = copyButton.innerHTML;
+
+                    copyButton.classList.add('copied');
+                    copyButton.innerHTML = `
+                        <svg class="copy-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        已复制
+                    `;
+
+                    // 2秒后恢复按钮状态
+                    setTimeout(() => {
+                        copyButton.classList.remove('copied');
+                        copyButton.innerHTML = originalText;
+                    }, 2000);
+
+                    showSuccess('内容已复制到剪贴板');
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    showError('复制失败，请手动选择并复制');
+                });
+        }
+
+        async function showEmailDetail(messageId) {
+            document.getElementById('emailCard').classList.add('hidden');
+            document.getElementById('detailCard').classList.remove('hidden');
+
+            const detailDiv = document.getElementById('emailDetail');
+            detailDiv.innerHTML = '<div class="loading"><p>加载中...</p></div>';
+
+            try {
+                const response = await makeRequest(`${API_BASE}/emails/${currentUser}/${messageId}`);
+                if (!response.ok) throw new Error('获取邮件详情失败');
+
+                const email = await response.json();
+
+                detailDiv.innerHTML = `
+                    <div class="email-detail-header">
+                        <h3 style="margin-bottom: 16px; color: #1e293b;">${email.subject || '(无主题)'}</h3>
+                        <div class="email-meta-info">
+                            <p><strong>发件人:</strong> ${email.from_email}</p>
+                            <p><strong>收件人:</strong> ${email.to_email}</p>
+                            <p><strong>日期:</strong> ${formatEmailDate(email.date)} (${new Date(email.date).toLocaleString()})</p>
+                        </div>
+                    </div>
+                    <div class="email-content-container">
+                        ${renderEmailContent(email)}
+                    </div>
+                `;
+
+            } catch (error) {
+                detailDiv.innerHTML = '<div class="error">加载失败: ' + error.message + '</div>';
+            }
+        }
+
+        function backToList() {
+            document.getElementById('detailCard').classList.add('hidden');
+            document.getElementById('emailCard').classList.remove('hidden');
+        }
+
+        function backToAccountManage() {
+            document.getElementById('emailCard').classList.add('hidden');
+            document.getElementById('loginCard').classList.remove('hidden');
+            switchTab('manage');
+            loadAccountList();
+        }
+
+        async function loadAccountSwitcher() {
+            try {
+                const response = await makeRequest(`${API_BASE}/accounts`);
+                if (!response.ok) throw new Error('获取账户列表失败');
+
+                const accounts = await response.json();
+                const switcher = document.getElementById('accountSwitcher');
+
+                // 清空现有选项
+                switcher.innerHTML = '<option value="">选择邮箱...</option>';
+
+                // 添加账户选项
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.email;
+                    option.textContent = account.email;
+
+                    // 标记当前账户
+                    if (account.email === currentUser) {
+                        option.selected = true;
+                        option.textContent += ' (当前)';
+                    }
+
+                    // 根据状态添加标识
+                    if (account.status === 'inactive') {
+                        option.textContent += ' (无效)';
+                        option.style.color = '#dc2626';
+                    } else if (account.status === 'active') {
+                        option.style.color = '#16a34a';
+                    }
+
+                    switcher.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('加载账户选择器失败:', error);
+            }
+        }
+
+        async function switchAccount() {
+            const switcher = document.getElementById('accountSwitcher');
+            const selectedEmail = switcher.value;
+
+            if (!selectedEmail || selectedEmail === currentUser) {
+                return;
+            }
+
+            if (!savedAccounts[selectedEmail]) {
+                showError('账户信息不存在，请返回账户管理重新添加');
+                switcher.value = currentUser; // 恢复原选择
+                return;
+            }
+
+            // 添加切换动画
+            const emailCard = document.getElementById('emailCard');
+            emailCard.style.opacity = '0.5';
+            emailCard.style.transition = 'opacity 0.3s ease';
+
+            try {
+                // 清除旧用户的缓存
+                if (typeof email_cache !== 'undefined') {
+                    // 这是前端缓存清理的占位符
+                }
+
+                currentUser = selectedEmail;
+                document.getElementById('userEmail').textContent = currentUser;
+
+                // 重新加载账户选择器以更新"当前"标识
+                await loadAccountSwitcher();
+
+                // 重新加载邮件
+                currentInboxPage = 1;
+                currentJunkPage = 1;
+                await loadDualEmails(false);
+
+                showSuccess(`已切换到: ${currentUser}`);
+
+            } catch (error) {
+                showError('切换邮箱失败: ' + error.message);
+                switcher.value = currentUser; // 恢复原选择
+            } finally {
+                emailCard.style.opacity = '1';
+            }
+        }
+
+        // ===== GPT 批量注册（第四栏） =====
+        let gptRunId = '';
+        let gptAbortController = null;
+        let gptPwdMap = {};
+        let gptTotal = 0, gptDone = 0, gptSuccess = 0, gptError = 0;
+        // 解除并发输入禁用并设定范围，便于与后端并发匹配
+        try{
+            const cc = document.getElementById('gptConcurrency');
+            if (cc){ cc.removeAttribute('disabled'); cc.setAttribute('min','1'); cc.setAttribute('max','5'); cc.setAttribute('step','1'); }
+        }catch{}
+        function gptUpdateStatus(extra = ''){
+            const el = document.getElementById('gptStatus');
+            if (!el) return;
+            const pct = gptTotal ? Math.round((gptDone / gptTotal) * 100) : 0;
+            el.textContent = `进度 ${gptDone}/${gptTotal} (${pct}%) | 成功 ${gptSuccess} | 失败 ${gptError}${extra ? ' | ' + extra : ''}`;
+        }
+
+        function gptLog(msg){
+            const box = document.getElementById('gptLog');
+            if (!box) return;
+            const t = new Date().toLocaleTimeString();
+            box.textContent += `[${t}] ${msg}\n`;
+            box.scrollTop = box.scrollHeight;
+        }
+        function clearGptLog(){ const box = document.getElementById('gptLog'); if (box) box.textContent=''; }
+
+        function getGptAccounts(){
+            try { return JSON.parse(document.getElementById('gptAccounts').value || '[]'); } catch { return []; }
+        }
+        function setGptAccounts(arr){
+            document.getElementById('gptAccounts').value = JSON.stringify(arr || [], null, 2);
+        }
+        // 从账户管理加载账户并选择
+        async function loadGptAccountList(){
+            const list = document.getElementById('gptAccountList');
+            if (!list || list.dataset.loaded === 'true') return;
+            list.innerHTML = '<p>加载中...</p>';
+            try{
+                // 获取账户列表
+                const resp = await makeRequest(`${API_BASE}/accounts?check_status=false`);
+                if (!resp.ok) throw new Error('获取账户失败');
+                const data = await resp.json();
+                // 获取密码映射（从 accounts.json 读取）
+                try{
+                    const pwdResp = await makeRequest(`${API_BASE}/accounts/passwords`);
+                    if (pwdResp.ok){ gptPwdMap = await pwdResp.json(); }
+                }catch{ /* ignore */ }
+                renderGptAccountList(data);
+                list.dataset.loaded = 'true';
+            }catch(e){
+                list.innerHTML = `<div class="error">加载失败: ${e.message}</div>`;
+            }
+        }
+        function renderGptAccountList(accounts){
+            const list = document.getElementById('gptAccountList');
+            if (!accounts || !accounts.length){
+                list.className = 'account-list';
+                list.innerHTML = '<div class="error">暂无账户，请先在“账户管理”添加账户</div>';
+                return;
+            }
+            const frag = document.createDocumentFragment();
+            accounts.forEach(acc => {
+                const email = acc.email || acc.email_id || acc;
+                const label = document.createElement('label');
+                label.className = 'account-item';
+                label.setAttribute('data-email', email);
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'account-checkbox';
+                cb.addEventListener('change', gptSyncSelected);
+                const span = document.createElement('span');
+                span.className = 'email';
+                span.textContent = email;
+                label.appendChild(cb);
+                label.appendChild(span);
+                frag.appendChild(label);
+            });
+            list.className = 'account-list';
+            list.innerHTML = '';
+            list.appendChild(frag);
+        }
+        function gptSelectAll(all){
+            const list = document.getElementById('gptAccountList');
+            if (!list) return;
+            list.querySelectorAll('.account-checkbox').forEach(cb => cb.checked = !!all);
+            gptSyncSelected();
+        }
+        function gptSyncSelected(){
+            const list = document.getElementById('gptAccountList');
+            if (!list) return;
+            const emails = Array.from(list.querySelectorAll('.account-checkbox:checked')).map(cb => cb.closest('.account-item').getAttribute('data-email'));
+            const arr = emails.map(e => ({ email: e, password: (gptPwdMap && gptPwdMap[e]) ? gptPwdMap[e] : '' }));
+            setGptAccounts(arr);
+        }
+
+        async function startGptRun(){
+            try{
+                const accountsText = document.getElementById('gptAccounts').value;
+                const accounts = (window.parseTextToAccounts || (()=>[]))(accountsText);
+                if (!accounts.length) { showError('请提供有效的账户 JSON'); return; }
+                // 初始化进度
+                gptTotal = accounts.length; gptDone = 0; gptSuccess = 0; gptError = 0;
+                gptUpdateStatus('创建中');
+                let concurrency = 1;
+                try {
+                    const v = parseInt(document.getElementById('gptConcurrency').value || '1', 10);
+                    if (!Number.isNaN(v) && v > 0) concurrency = v;
+                } catch {}
+                const payload = { accounts, concurrency };
+                gptLog('提交任务中...');
+                const resp = await makeRequest('/gpt-register/runs', { method:'POST', body: JSON.stringify(payload) });
+                const data = await resp.json();
+                gptRunId = data.run_id || '';
+                document.getElementById('gptRunId').value = gptRunId;
+                gptLog('任务创建: ' + gptRunId);
+                subscribeGptEvents(gptRunId);
+            }catch(e){ showError('创建任务失败: '+ e.message); gptLog('创建失败: '+e.message); }
+        }
+
+        async function subscribeGptEvents(runId){
+            try{
+                if (gptAbortController) { try { gptAbortController.abort(); } catch {} }
+                gptAbortController = new AbortController();
+                const resp = await fetch(API_BASE + `/gpt-register/runs/${encodeURIComponent(runId)}/events`, {
+                    headers: { 'Authorization': `Bearer ${adminPassword}` },
+                    signal: gptAbortController.signal
+                });
+                if (!resp.ok || !resp.body) { throw new Error('SSE 连接失败'); }
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                while(true){
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, {stream:true});
+                    const parts = buffer.split('\n\n');
+                    buffer = parts.pop();
+                    for (const chunk of parts){
+                        const line = chunk.split('\n').find(l=>l.startsWith('data:'));
+                        if (!line) continue;
+                        try{
+                            const obj = JSON.parse(line.slice(5).trim());
+                            // 解析事件，优化展示
+                            if (obj.last_event){
+                                const ev = obj.last_event;
+                                if (ev.type === 'start'){
+                                    gptLog(`开始: ${ev.email}`);
+                                } else if (ev.type === 'done'){
+                                    gptDone++; gptSuccess++; gptUpdateStatus();
+                                    gptLog(`成功: ${ev.email}`);
+                                } else if (ev.type === 'error'){
+                                    gptDone++; gptError++; gptUpdateStatus();
+                                    const em = ev.error && (ev.error.step ? `${ev.error.step}: ${ev.error.message}` : ev.error.message) || '未知错误';
+                                    gptLog(`失败: ${ev.email} | ${em}`);
+                                }
+                            }
+                            if (obj.status){
+                                if (obj.status === 'running'){
+                                    gptUpdateStatus('运行中');
+                                } else if (obj.status === 'completed'){
+                                    gptUpdateStatus('已完成');
+                                } else if (obj.status === 'failed'){
+                                    gptUpdateStatus('失败');
+                                } else if (obj.status === 'cancelled'){
+                                    gptUpdateStatus('已取消');
+                                }
+                            }
+                            if (['completed','failed','not_found','cancelled'].includes(obj.status)){
+                                try { gptAbortController.abort(); } catch {}
+                                gptAbortController = null;
+                            }
+                        }catch{}
+                    }
+                }
+            }catch(e){ gptLog('SSE 中断: '+ e.message); }
+        }
+
+        async function cancelGptRun(){
+            if (!gptRunId) { showError('请先创建或填写 Run ID'); return; }
+            await makeRequest(`/gpt-register/runs/${encodeURIComponent(gptRunId)}/cancel`, { method: 'POST' });
+            gptLog('已提交取消');
+        }
+        async function pauseGptRun(){
+            if (!gptRunId) { showError('请先创建或填写 Run ID'); return; }
+            await makeRequest(`/gpt-register/runs/${encodeURIComponent(gptRunId)}/pause`, { method: 'POST' });
+            gptLog('已提交暂停');
+        }
+        async function resumeGptRun(){
+            if (!gptRunId) { showError('请先创建或填写 Run ID'); return; }
+            await makeRequest(`/gpt-register/runs/${encodeURIComponent(gptRunId)}/resume`, { method: 'POST' });
+            gptLog('已提交继续');
+        }
+        async function exportGptSuccess(){
+            if (!gptRunId) { showError('请先创建或填写 Run ID'); return; }
+            try{
+                const resp = await fetch(API_BASE + `/gpt-register/runs/${encodeURIComponent(gptRunId)}/export?status=success&format=csv`, {
+                    headers: { 'Authorization': `Bearer ${adminPassword}` }
+                });
+                if (!resp.ok) throw new Error('导出失败');
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `run-${gptRunId}-success.csv`; a.click();
+                setTimeout(()=>URL.revokeObjectURL(url), 2000);
+                gptLog('已导出成功账号');
+            }catch(e){ showError('导出失败: '+ e.message); gptLog('导出失败: '+ e.message); }
+        }
+
+        function updateDualPagination(inboxTotal, junkTotal) {
+            const inboxPagination = document.getElementById('inboxPagination');
+            const junkPagination = document.getElementById('junkPagination');
+
+            // 更新收件箱分页
+            const inboxPages = Math.ceil(inboxTotal / 20);
+            if (inboxPages <= 1) {
+                inboxPagination.classList.add('hidden');
+            } else {
+                inboxPagination.classList.remove('hidden');
+                inboxPagination.innerHTML = `
+                    <button class="btn btn-secondary" onclick="loadInboxPage(${currentInboxPage - 1})" ${currentInboxPage === 1 ? 'disabled' : ''}>‹</button>
+                    <span>${currentInboxPage}/${inboxPages}</span>
+                    <button class="btn btn-secondary" onclick="loadInboxPage(${currentInboxPage + 1})" ${currentInboxPage === inboxPages ? 'disabled' : ''}>›</button>
+                `;
+            }
+
+            // 更新垃圾箱分页
+            const junkPages = Math.ceil(junkTotal / 20);
+            if (junkPages <= 1) {
+                junkPagination.classList.add('hidden');
+            } else {
+                junkPagination.classList.remove('hidden');
+                junkPagination.innerHTML = `
+                    <button class="btn btn-secondary" onclick="loadJunkPage(${currentJunkPage - 1})" ${currentJunkPage === 1 ? 'disabled' : ''}>‹</button>
+                    <span>${currentJunkPage}/${junkPages}</span>
+                    <button class="btn btn-secondary" onclick="loadJunkPage(${currentJunkPage + 1})" ${currentJunkPage === junkPages ? 'disabled' : ''}>›</button>
+                `;
+            }
+        }
+
+        window.onload = function() {
+            // 检查管理员认证状态
+            if (isPasswordSet()) {
+                showEmailManagement();
+                // 支持通过 ?tab=gpt 等参数直接进入相应标签
+                try {
+                    const tab = new URLSearchParams(window.location.search).get('tab');
+                    if (tab) switchTab(tab);
+                } catch {}
+            } else {
+                showAdminLogin();
+            }
+        };
+
+        // 页面可见性变化时刷新账户选择器
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && currentUser && document.getElementById('emailCard').classList.contains('hidden') === false) {
+                loadAccountSwitcher();
+            }
+        });
+
+        // ===== GPT 前端增强：日志/状态/导入/配置 =====
+        function openGptConfig(){ try { window.open('/static/config.html', '_blank'); } catch(e){} }
+        function gptLog(msg){
+            try{
+                const el = document.getElementById('gptLog');
+                if (!el) return;
+                const t = new Date().toLocaleTimeString();
+                el.textContent += `[${t}] ${msg}\n`;
+                el.scrollTop = el.scrollHeight;
+            }catch{}
+        }
+        function gptUpdateStatus(extra){
+            try{
+                const el = document.getElementById('gptStatus');
+                if (!el) return;
+                const base = `总数: ${gptTotal||0} | 完成: ${gptDone||0} | 成功: ${gptSuccess||0} | 失败: ${gptError||0}`;
+                el.textContent = extra ? `${extra} | ${base}` : base;
+            }catch{}
+        }
+        function clearGptLog(){
+            try{
+                if (typeof gptAbortController !== 'undefined' && gptAbortController){ try{ gptAbortController.abort(); }catch{} gptAbortController=null; }
+                const log = document.getElementById('gptLog'); if (log) log.textContent = '';
+                const st = document.getElementById('gptStatus'); if (st) st.textContent = '待创建';
+                const rid = document.getElementById('gptRunId'); if (rid) rid.value = '';
+                gptTotal = 0; gptDone = 0; gptSuccess = 0; gptError = 0;
+            }catch{}
+        }
+        (function initGptEnhance(){
+            try{
+                const cc = document.getElementById('gptConcurrency');
+                if (cc){ cc.removeAttribute('disabled'); cc.setAttribute('min','1'); cc.setAttribute('max','5'); cc.setAttribute('step','1'); }
+            }catch{}
+            try{
+                // Create import + config buttons if missing
+                const ta = document.getElementById('gptAccounts');
+                if (ta && ta.parentElement){
+                    const bar = document.createElement('div');
+                    bar.style.marginTop = '8px';
+                    bar.className = 'button-row';
+                    // file input
+                    const file = document.createElement('input');
+                    file.type = 'file'; file.id = 'gptFile'; file.multiple = true; file.accept = '.csv,.txt,.md,.json'; file.style.display='none';
+                    // import button
+                    const btnImport = document.createElement('button'); btnImport.className='btn'; btnImport.textContent='导入文件';
+                    btnImport.onclick = ()=> file.click();
+                    // config button
+                    const btnCfg = document.createElement('button'); btnCfg.className='btn'; btnCfg.textContent='配置编辑';
+                    btnCfg.onclick = openGptConfig;
+                    const hint = document.createElement('span'); hint.style.color='#64748b'; hint.style.fontSize='12px'; hint.style.marginLeft='8px'; hint.textContent='当前使用预设: chatgpt_signup（flow.yaml 可修改）';
+                    bar.appendChild(file); bar.appendChild(btnImport); bar.appendChild(btnCfg); bar.appendChild(hint);
+                    ta.parentElement.appendChild(bar);
+                    // wire file change
+                    file.addEventListener('change', async (ev)=>{
+                        const files = Array.from(ev.target.files||[]);
+                        let merged = [];
+                        try{ merged = JSON.parse(ta.value || '[]'); }catch{ merged = []; }
+                        let total = 0;
+                        for (const f of files){
+                            try{
+                                const text = await f.text();
+                                const ext = (f.name.split('.').pop()||'').toLowerCase();
+                                const items = (window.parseTextToAccounts ? window.parseTextToAccounts(text, ext) : []);
+                                if (items && items.length){ merged = merged.concat(items); total += items.length; }
+                            }catch(e){ gptLog('解析失败: '+ f.name + ' ' + (e && e.message || e)); }
+                        }
+                        ta.value = JSON.stringify(merged, null, 2);
+                        gptLog('已导入条数: '+ total + '，合计: ' + merged.length);
+                        file.value = '';
+                    });
+                }
+            }catch{}
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>日志可视化</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 6px; }
+    th { background: #f4f4f4; }
+    #details { white-space: pre-wrap; border:1px solid #ccc; padding:8px; height: 220px; overflow:auto; }
+  </style>
+</head>
+<body>
+  <h2>运行索引</h2>
+  <div>
+    <input id="kw" placeholder="按 run_id/status 过滤" />
+    <button onclick="load()">加载</button>
+  </div>
+  <table id="tbl">
+    <thead><tr><th>run_id</th><th>status</th><th>created_at</th><th>updated_at</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>详情</h3>
+  <div id="details"></div>
+
+  <script>
+    async function load(){
+      const idx = await fetch('/run-logs/index.json').then(r=>r.json()).catch(()=>({runs:{}}));
+      const tbody = document.querySelector('#tbl tbody');
+      tbody.innerHTML = '';
+      const kw = (document.getElementById('kw').value||'').toLowerCase();
+      for (const [run_id, v] of Object.entries(idx.runs||{})){
+        const rowStr = `${run_id} ${v.status}`.toLowerCase();
+        if (kw && !rowStr.includes(kw)) continue;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${run_id}</td><td>${v.status}</td><td>${v.created_at}</td><td>${v.updated_at}</td>`;
+        const tdOp = document.createElement('td');
+        const btn = document.createElement('button'); btn.textContent='查看'; btn.onclick=()=>show(run_id);
+        tdOp.appendChild(btn); tr.appendChild(tdOp); tbody.appendChild(tr);
+      }
+    }
+    async function show(run_id){
+      const data = await fetch(`/gpt-register/runs/${run_id}`).then(r=>r.json());
+      document.getElementById('details').textContent = JSON.stringify(data, null, 2);
+    }
+    load();
+  </script>
+</body>
+</html>
+

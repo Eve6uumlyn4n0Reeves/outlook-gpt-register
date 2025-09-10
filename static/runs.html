@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>GPT 批量注册 - 任务管理</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #log { white-space: pre-wrap; border: 1px solid #ccc; padding: 8px; height: 300px; overflow: auto; }
+    label { display: inline-block; width: 120px; }
+    input, textarea { width: 400px; }
+    .row { margin: 8px 0; }
+    button { margin-right: 8px; }
+  </style>
+  <script src="/static/js/common.js"></script>
+
+  <script>
+    // 已迁移到主界面第四栏，这里做跳转以保持一致入口
+    try { window.location.replace('/?tab=gpt'); } catch { window.location.href='/?tab=gpt'; }
+  </script>
+
+</head>
+<body>
+  <h2>GPT 批量注册 - 最小任务界面</h2>
+
+  <div class="row">
+    <label>Run ID:</label>
+    <input id="runId" placeholder="创建后自动填充" />
+    <button id="btnStart">创建任务</button>
+    <button id="btnCancel">取消</button>
+    <button id="btnPause">暂停</button>
+    <button id="btnResume">继续</button>
+  </div>
+
+  <div class="row">
+    <label>账户列表(JSON行内):</label>
+    <textarea id="accounts" rows="5" placeholder='[{"email":"a@example.com","password":"...","proxy":"http://user:pass@ip:port","user_agent":"Mozilla/5.0 ..."}]'></textarea>
+  </div>
+
+  <div class="row">
+    <label>导入/导出:</label>
+    <input id="file" type="file" multiple accept=".csv,.txt,.md,.json" style="display:none" />
+    <button id="btnImport">导入文件</button>
+    <button id="btnExport">导出成功账号(CSV)</button>
+  </div>
+
+  <div class="row">
+    <label>并发:</label>
+    <input id="concurrency" value="2" />
+  </div>
+
+  <div class="row">
+    <label>日志:</label>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    let es = null;
+
+    function log(msg) {
+      const t = new Date().toLocaleTimeString();
+      logEl.textContent += `[${t}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function startRun() {
+      try {
+        const payload = {
+          accounts: JSON.parse(document.getElementById('accounts').value || '[]'),
+          concurrency: parseInt(document.getElementById('concurrency').value || '2', 10)
+        };
+        const resp = await fetch('/gpt-register/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await resp.json();
+        document.getElementById('runId').value = data.run_id;
+        log('任务创建: ' + data.run_id);
+        subscribe(data.run_id);
+      } catch (e) {
+        log('创建失败: ' + e);
+      }
+    }
+
+    function subscribe(runId) {
+      if (es) es.close();
+      es = new EventSource(`/gpt-register/runs/${runId}/events`);
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          log('状态: ' + JSON.stringify(data));
+          if (['completed', 'failed', 'not_found'].includes(data.status)) {
+            es.close(); es = null;
+          }
+        } catch (e) { log('解析事件失败: ' + e); }
+      };
+      es.onerror = (ev) => { log('SSE 错误'); };
+    }
+
+    async function post(path) {
+      const runId = document.getElementById('runId').value.trim();
+      if (!runId) { log('请先创建或输入 Run ID'); return; }
+      await fetch(path.replace('{id}', runId), { method: 'POST' });
+      log('操作提交: ' + path);
+    }
+
+    document.getElementById('btnStart').onclick = startRun;
+    document.getElementById('btnCancel').onclick = () => post('/gpt-register/runs/{id}/cancel');
+    document.getElementById('btnPause').onclick = () => post('/gpt-register/runs/{id}/pause');
+    document.getElementById('btnResume').onclick = () => post('/gpt-register/runs/{id}/resume');
+
+    // Import
+    const fileInput = document.getElementById('file');
+    document.getElementById('btnImport').onclick = () => fileInput.click();
+    fileInput.addEventListener('change', async (ev) => {
+      const files = Array.from(ev.target.files || []);
+      let total = 0;
+      let merged = getCurrentAccounts();
+      for (const f of files) {
+        try {
+          const text = await f.text();
+          const ext = (f.name.split('.').pop() || '').toLowerCase();
+          const items = (window.parseTextToAccounts ? window.parseTextToAccounts(text, ext) : []);
+          if (items.length) {
+            merged = merged.concat(items);
+            total += items.length;
+          }
+        } catch (e) {
+          log('解析文件失败: ' + f.name + ' ' + e);
+        }
+      }
+      setCurrentAccounts(merged);
+      log('已导入条目: ' + total + '，合计: ' + merged.length);
+      fileInput.value = '';
+    });
+
+    function getCurrentAccounts(){
+      try { return JSON.parse(document.getElementById('accounts').value || '[]'); } catch { return []; }
+    }
+    function setCurrentAccounts(arr){
+      document.getElementById('accounts').value = JSON.stringify(arr, null, 2);
+    }
+
+    function parseTextToAccounts(text, ext){
+      text = text.trim();
+      if (!text) return [];
+      // JSON array
+      if (text.startsWith('[')){
+        try { const arr = JSON.parse(text); return Array.isArray(arr) ? arr : []; } catch { /* ignore */ }
+      }
+      // JSONL / per-line JSON
+      if (text.includes('{')){
+        const lines = text.split(/\r?\n/);
+        const out = [];
+        for (const ln of lines){
+          const s = ln.trim(); if (!s) continue;
+          if (s.startsWith('{')){ try { const obj = JSON.parse(s); out.push(obj); } catch { /* ignore */ } }
+        }
+        if (out.length) return out;
+      }
+      // CSV (simple)
+      const lines = text.split(/\r?\n/).filter(x=>x.trim());
+      if (!lines.length) return [];
+      const first = lines[0];
+      const hasHeader = /email/i.test(first);
+      const rows = hasHeader ? lines.slice(1) : lines;
+      const out = [];
+      for (const row of rows){
+        const parts = row.split(/[,\t\s]+/).map(s=>s.trim()).filter(Boolean);
+        if (!parts.length) continue;
+        if (hasHeader){
+          // naive CSV by header order
+          const hdrs = first.split(/[,\t]+/).map(h=>h.trim().toLowerCase());
+          const obj = {};
+          for (let i=0;i<Math.min(hdrs.length, parts.length);i++) obj[hdrs[i]] = parts[i];
+          if (obj.email) out.push(obj);
+        } else {
+          // assume: email[,password[,display_name[,dob]]]
+          const obj = { email: parts[0] };
+          if (parts[1]) obj.password = parts[1];
+          if (parts[2]) obj.display_name = parts[2];
+          if (parts[3]) obj.dob = parts[3];
+          if (parts[4]) obj.proxy = parts[4];
+          if (parts[5]) obj.user_agent = parts[5];
+          out.push(obj);
+        }
+      }
+      return out;
+    }
+
+    // Export
+    document.getElementById('btnExport').onclick = () => {
+      const runId = document.getElementById('runId').value.trim();
+      if (!runId) { log('请先创建或输入 Run ID'); return; }
+      window.open(`/gpt-register/runs/${runId}/export?status=success&format=csv`, '_blank');
+    };
+  </script>
+</body>
+</html>
+
